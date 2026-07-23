@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import reclassify  # single taxonomy source: title -> one of 32 categories
 PYTHONUTF8=1
 
 # DROP: id -> reason group (all are 2024 platform-tactical ad/traffic content that has changed)
@@ -60,13 +61,15 @@ rows_by_id={r[0]:r for r in rows}
 with open('drop.tsv','w') as o:
     for vid,date,dur,title in rows:
         if vid in drop: o.write(f"{date}\t{vid}\t{drop[vid]}\t{'[?]' if vid in flags else ''}\t{title}\n")
+# cat[] decides membership (which 2024+ talks to keep); reclassify.classify()
+# decides the folder label, so a full re-run reproduces the 32-folder taxonomy.
 with open('keep.tsv','w') as o:
     for vid,date,dur,title in rows:
-        if vid in cat: o.write(f"{cat[vid]}\t{date}\t{vid}\t{dur}\t{'[?]' if vid in flags else ''}\t{title}\n")
+        if vid in cat: o.write(f"{reclassify.classify(title)}\t{date}\t{vid}\t{dur}\t{'[?]' if vid in flags else ''}\t{title}\n")
 
 # counts
 from collections import Counter
-cc=Counter(cat.values())
+cc=Counter(reclassify.classify(title) for vid,date,dur,title in rows if vid in cat)
 print("\n=== KEEP by category ===")
 for c,n in sorted(cc.items(), key=lambda x:-x[1]): print(f"  {n:>3}  {c}")
 print(f"  TOTAL KEEP = {sum(cc.values())}")

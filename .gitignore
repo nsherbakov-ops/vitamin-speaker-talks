@@ -5,6 +5,10 @@ work/*.log
 work/*.err
 work/urls.txt
 work/retry_ids.txt
+# reclassification scratch/debug dumps (regenerable via reclassify.py)
+work/reclass_dump.txt
+work/reclass_trace.txt
+work/reclass_run.txt
 # python cruft
 __pycache__/
 *.pyc
