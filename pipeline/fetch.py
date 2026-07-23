@@ -1,19 +1,41 @@
 # -*- coding: utf-8 -*-
 """Robust, resumable subtitle+description fetcher (no video download).
 Per-video timeout so one hanging video can't stall the batch.
-Re-run safely: already-fetched videos are skipped."""
+Re-run safely: already-fetched videos are skipped.
+
+Usage:
+    python3 fetch.py [idfile] [outdir]
+Defaults: idfile=keep.tsv  outdir=raw
+ID column autodetected per line: TSV -> field[2], pipe -> field[0], else whole line.
+"""
 import os, subprocess, sys, glob
 
 WORK = os.path.dirname(os.path.abspath(__file__))
-RAW = os.path.join(WORK, 'raw')
+IDFILE = sys.argv[1] if len(sys.argv) > 1 else os.path.join(WORK, 'keep.tsv')
+RAW = sys.argv[2] if len(sys.argv) > 2 else os.path.join(WORK, 'raw')
+if not os.path.isabs(IDFILE):
+    IDFILE = os.path.join(WORK, IDFILE)
+if not os.path.isabs(RAW):
+    RAW = os.path.join(WORK, RAW)
 os.makedirs(RAW, exist_ok=True)
 
+def extract_id(line):
+    line = line.rstrip('\n')
+    if not line.strip():
+        return None
+    if '\t' in line:
+        p = line.split('\t')
+        return p[2] if len(p) >= 3 else None
+    if '|' in line:
+        return line.split('|')[0].strip() or None
+    return line.strip()
+
 ids = []
-with open(os.path.join(WORK, 'keep.tsv'), encoding='utf-8') as f:
+with open(IDFILE, encoding='utf-8') as f:
     for line in f:
-        p = line.rstrip('\n').split('\t')
-        if len(p) >= 3:
-            ids.append(p[2])
+        vid = extract_id(line)
+        if vid:
+            ids.append(vid)
 
 PER_VIDEO_TIMEOUT = 90
 done, skipped, failed = [], [], []

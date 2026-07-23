@@ -23,17 +23,36 @@ def parse_json3(path):
         out.append(ln)
     return re.sub(r'\s+', ' ', ' '.join(out)).strip()
 
+def _clean_name(s):
+    return s.replace('«', '').replace('»', '').replace('"', '').strip(' .,')
+
+def _clean_role(s):
+    s = s.strip()
+    # role = up to the first sentence end, then capped
+    s = re.split(r'(?<=[а-яёA-Za-z0-9»)])\.\s', s, maxsplit=1)[0]
+    s = s.replace('«', '').replace('»', '').replace('"', '').strip(' .,;—–-')
+    return s[:120].strip()
+
+def _split_name_role(rest):
+    parts = re.split(r'\s+[—–]\s+|\s+-\s+|,\s+', rest.strip(), maxsplit=1)
+    name = _clean_name(parts[0])
+    role = _clean_role(parts[1]) if len(parts) > 1 else ''
+    return name, role
+
 def extract_speaker(desc):
-    for pat in (r'Рассказыва(?:ет|ют)\s+(.+)', r'Спикер[:\s—–\-]+(.+)', r'Ведущий[:\s—–\-]+(.+)'):
-        m = re.search(pat, desc)
-        if m:
-            rest = m.group(1).strip()
-            parts = re.split(r'\s+[—–]\s+|\s+-\s+|,\s+', rest, maxsplit=1)
-            def clean(s):
-                return s.replace('«', '').replace('»', '').replace('"', '').strip(' .,')
-            name = clean(parts[0])
-            role = clean(parts[1]) if len(parts) > 1 else ''
-            return name, role
+    # 1) verb lead-in: "Рассказывает Имя Фамилия — роль"
+    m = re.search(r'Рассказыва(?:ет|ют)\s+([А-ЯЁ].+)', desc)
+    if m:
+        return _split_name_role(m.group(1))
+    # 2) label: "Спикер: Имя — роль" / "📌 Ведущий — ..." (colon/dash required,
+    #    so mid-bio prose like "...Спикер вебинаров..." can't match)
+    m = re.search(r'(?:Спикер|Ведущий)\s*[:—–]\s*([А-ЯЁ].+)', desc)
+    if m:
+        return _split_name_role(m.group(1))
+    # 3) webinar format — first "Имя Фамилия — роль" line in the description
+    m = re.search(r'(?m)^\s*([А-ЯЁ][а-яё]+(?:\s+[А-ЯЁ][а-яё]+){1,2})\s+[—–]\s+(.+)$', desc)
+    if m:
+        return _clean_name(m.group(1)), _clean_role(m.group(2))
     return '', ''
 
 def slugify(title):
