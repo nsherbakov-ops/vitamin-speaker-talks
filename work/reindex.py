@@ -27,7 +27,7 @@ FIELD = {
 def parse_header(path):
     h = {}
     with open(path, encoding='utf-8') as f:
-        for _ in range(12):
+        for _ in range(20):
             line = f.readline()
             if not line or line.startswith('='):
                 break

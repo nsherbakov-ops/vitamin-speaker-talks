@@ -37,7 +37,7 @@ with open(IDFILE, encoding='utf-8') as f:
         if vid:
             ids.append(vid)
 
-PER_VIDEO_TIMEOUT = 90
+PER_VIDEO_TIMEOUT = int(os.environ.get('PER_VIDEO_TIMEOUT', '90'))
 done, skipped, failed = [], [], []
 
 for i, vid in enumerate(ids, 1):

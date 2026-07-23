@@ -34,14 +34,23 @@ def parse_ts(path, interval=INTERVAL):
         if dedup and dedup[-1][1] == text:
             continue
         dedup.append((tsec, text))
-    parts = []
+    # One line per marker interval so long transcripts stay navigable
+    # (grep/Read by line) instead of collapsing into a single 250KB line —
+    # a single-line file caused a split agent to misjudge caption coverage.
+    lines = []
+    cur = []
     last_marker = None
     for tsec, text in dedup:
         if last_marker is None or tsec - last_marker >= interval:
-            parts.append(f"[[{fmt_ts(tsec)} | t={tsec}]]")
+            if cur:
+                lines.append(' '.join(cur))
+                cur = []
+            cur.append(f"[[{fmt_ts(tsec)} | t={tsec}]]")
             last_marker = tsec
-        parts.append(text)
-    full = re.sub(r'\s+', ' ', ' '.join(parts)).strip()
+        cur.append(text)
+    if cur:
+        lines.append(' '.join(cur))
+    full = '\n'.join(re.sub(r'\s+', ' ', ln).strip() for ln in lines)
     dur = dedup[-1][0] if dedup else 0
     return full, dur
 
