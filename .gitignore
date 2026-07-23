@@ -1,0 +1,9 @@
+# raw YouTube subtitle dumps + descriptions (bulky, regenerable via pipeline)
+work/raw/
+work/*.log
+work/*.err
+work/urls.txt
+# python cruft
+__pycache__/
+*.pyc
+.DS_Store
